@@ -1,108 +1,98 @@
-import React, { Component } from 'react'
+import React, { useEffect, useState } from 'react'
 import NewsItem from './NewsItem'
 import Spinner from './Spinner'
 import PropTypes from 'prop-types'
 import InfiniteScroll from 'react-infinite-scroll-component'
 
 
-export class News extends Component {
+const News = (props) => {
 
-  static defaultProps = {
-    country: "in",
-    category: 'general',
-    pageSize: 10
-  }
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
 
-  static propTypes = {
-    country: PropTypes.string,
-    category: PropTypes.string,
-    pageSize: PropTypes.number
-  }
 
-  constructor() {
-    super()
-    this.state = {
-      articles: [],
-      loading: true,
-      page: 1,
-      totalResults: 0
-    }
+  const updateNews = async () => {
 
-  }
-
-  async updateNews() {
-
-    const url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=c4f749791681425fb7951933e612af4e&page=${this.state.page}&pagesize=${this.props.pageSize}`
+    const url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=${props.apiKey}&page=${page}&pagesize=${props.pageSize}`
 
 
     let data = await fetch(url)
     let mainData = await data.json()
 
-    this.setState({
-      articles: mainData.articles,
-      totalResults: mainData.totalResults,
-      loading: false
-    })
+    setArticles(mainData.articles)
+    setTotalResults(mainData.totalResults)
+    setLoading(false)
+
   }
 
-  async componentDidMount() {
-    if (this.state.page === 1)
-      this.updateNews()
-  }
+  useEffect(() => {
+    updateNews()
+    // eslint-disable-line
+  }, [])
 
-  fetchMoreData = async () => {
+  const fetchMoreData = async () => {
 
-    this.setState({
-      page: this.state.page + 1
-    })
-    
-    const url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=c4f749791681425fb7951933e612af4e&page=${this.state.page + 1}&pagesize=${this.props.pageSize}`
+    // setpage is async so it will take some time to update page so we have to manually upadte page = page + 1
+    setPage(page + 1)
 
-  
+    const url = `https://newsapi.org/v2/top-headlines?country=${props.country}&category=${props.category}&apiKey=${props.apiKey}&page=${page + 1}&pagesize=${props.pageSize}`
+
+
     let data = await fetch(url)
     let mainData = await data.json()
 
-    this.setState({
-      articles: this.state.articles.concat(mainData.articles),
-      totalResults: mainData.totalResults,
-      loading: false
-    })
+    setArticles(articles.concat(mainData.articles))
+    setTotalResults(mainData.totalResults)
+    setLoading(false)
+
   }
 
-  render() {
-    return (
-      <div>
-        <div className="container my-3">
-          <h2>DailyBuzz - Your Daily Dose of News!</h2>
-          {this.state.loading && <Spinner />}
-          <InfiniteScroll
-            dataLength={this.state.articles.length}
-            next={this.fetchMoreData}
-            hasMore={this.state.articles.length !== this.state.totalResults}
-            loader={<Spinner />}
-            style={{overflow: 'hidden'}}
-          >
-            <div className="row my-4">
-              {this.state.articles.map((ele) => {
-                return <div className="col-md-3" key={ele.url}>
-                  <NewsItem
-                    title={ele.title ? ele.title : ""}
-                    desc={ele.description ? ele.description : ""}
-                    imgurl={ele.urlToImage ? ele.urlToImage : "https://images.moneycontrol.com/static-mcnews/2023/10/adani_port-770x433.jpg"}
-                    newsurl={ele.url}
-                    author={ele.author ? ele.author : "Anonymous"}
-                    date={ele.publishedAt}
-                    source={ele.source.name} />
-                </div>
-              })}
-            </div>
+  return (
+    <div>
+      <div className="container my-3">
+        <h2 style={{ marginTop: '90px' }}>DailyBuzz - Your Daily Dose of News!</h2>
+        {loading && <Spinner />}
+        <InfiniteScroll
+          dataLength={articles.length}
+          next={fetchMoreData}
+          hasMore={articles.length !== totalResults}
+          loader={<Spinner />}
+          style={{ overflow: 'hidden' }}
+        >
+          <div className="row my-4">
+            {articles.map((ele) => {
+              return <div className="col-md-3" key={ele.url}>
+                <NewsItem
+                  title={ele.title ? ele.title : ""}
+                  desc={ele.description ? ele.description : ""}
+                  imgurl={ele.urlToImage ? ele.urlToImage : "https://images.moneycontrol.com/static-mcnews/2023/10/adani_port-770x433.jpg"}
+                  newsurl={ele.url}
+                  author={ele.author ? ele.author : "Anonymous"}
+                  date={ele.publishedAt}
+                  source={ele.source.name} />
+              </div>
+            })}
+          </div>
 
-          </InfiniteScroll>
+        </InfiniteScroll>
 
-        </div>
       </div>
-    )
-  }
+    </div>
+  )
+}
+
+News.defaultProps = {
+  country: "in",
+  category: 'general',
+  pageSize: 10
+}
+
+News.propTypes = {
+  country: PropTypes.string,
+  category: PropTypes.string,
+  pageSize: PropTypes.number
 }
 
 export default News
